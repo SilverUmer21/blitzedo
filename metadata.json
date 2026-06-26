@@ -1,0 +1,6 @@
+{
+  "name": "Blitzedo",
+  "description": "A premium modern production house for immersive games, high-end web applications, and polished mobile apps.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
