@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import BlitzedoLanding from './components/blitzedo-landing';
-import { SandboxConfig } from './components/particle-sandbox';
+import { SandboxConfig } from './types';
 
 export default function App() {
   const [sandboxConfig, setSandboxConfig] = useState<SandboxConfig>({

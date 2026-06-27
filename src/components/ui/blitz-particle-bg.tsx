@@ -69,8 +69,8 @@ const BlitzParticleBg: React.FC<BlitzParticleBgProps> = ({
                     let distance = Math.sqrt(dx * dx + dy * dy);
                     if (distance < mouse.radius) {
                         const force = (mouse.radius - distance) / mouse.radius;
-                        this.x -= (dx / distance) * force * 2.2;
-                        this.y -= (dy / distance) * force * 2.2;
+                        this.x -= (dx / distance) * force * 0.95;
+                        this.y -= (dy / distance) * force * 0.95;
                     }
                 }
 
@@ -88,8 +88,8 @@ const BlitzParticleBg: React.FC<BlitzParticleBgProps> = ({
                 let size = (Math.random() * 2) + 1;
                 let x = Math.random() * canvas.width;
                 let y = Math.random() * canvas.height;
-                let directionX = (Math.random() - 0.5) * 0.4;
-                let directionY = (Math.random() - 0.5) * 0.4;
+                let directionX = (Math.random() - 0.5) * 0.3;
+                let directionY = (Math.random() - 0.5) * 0.3;
                 particles.push(new Particle(x, y, directionX, directionY, size, particleColor));
             }
         }
@@ -113,8 +113,8 @@ const BlitzParticleBg: React.FC<BlitzParticleBgProps> = ({
                     const dy = particles[a].y - particles[b].y;
                     const distance = dx * dx + dy * dy;
                     
-                    if (distance < 12000) {
-                        const opacityValue = (1 - (distance / 12000)) * 0.7;
+                    if (distance < 15000) {
+                        const opacityValue = (1 - (distance / 15000)) * 0.85;
                         
                         let isMouseClose = false;
                         if (mouse.x !== null && mouse.y !== null) {

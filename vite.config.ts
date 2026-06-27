@@ -1,7 +1,7 @@
-import { defineConfig } from 'vite';
+import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import tailwindcss from '@tailwindcss/vite'; // Replace with your exact Tailwind plugin import if different
 import path from 'path';
+import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
@@ -12,18 +12,11 @@ export default defineConfig(() => {
       },
     },
     server: {
-      host: '0.0.0.0',
-      port: 3000,
-      // Fixed: Keeps HMR active but forces it over port 443 for ngrok compatibility
-      hmr: process.env.DISABLE_HMR === 'true' ? false : { clientPort: 443 },
+      // HMR is disabled in AI Studio via DISABLE_HMR env var.
+      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
+      hmr: process.env.DISABLE_HMR !== 'true',
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
-      allowedHosts: true,
-    },
-    preview: {
-      host: '0.0.0.0',
-      port: 3000,
-      allowedHosts: true,
     },
   };
 });

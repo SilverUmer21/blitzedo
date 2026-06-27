@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Play, RotateCcw, Activity, ArrowUpRight, ShieldCheck, Cpu, RefreshCw, Smartphone, Monitor, Gamepad2, Sparkles } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Play, RotateCcw, ArrowUpRight, Cpu, Gamepad2, Code2, Globe, ShieldCheck, Terminal, Sparkles } from 'lucide-react';
+import { PortfolioInteractiveCanvas } from './ui/portfolio-interactive-canvas';
 
 export const FeaturedProjects: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'all' | 'game' | 'web' | 'app'>('all');
-
   // --- GAME: Project CINDER State ---
   const [gameState, setGameState] = useState<'idle' | 'playing' | 'gameover'>('idle');
   const [score, setScore] = useState(0);
@@ -12,24 +11,24 @@ export const FeaturedProjects: React.FC = () => {
   const [lasers, setLasers] = useState<{ id: number; x: number; y: number }[]>([]);
   const [asteroids, setAsteroids] = useState<{ id: number; x: number; y: number; speed: number }[]>([]);
   const gameAreaRef = useRef<HTMLDivElement | null>(null);
-
-  // --- WEB: Telemetry CRM State ---
-  const [serverStatus, setServerStatus] = useState<'nominal' | 'spiked' | 'stabilizing'>('nominal');
-  const [telemetryData, setTelemetryData] = useState<number[]>([40, 45, 42, 50, 48, 55, 52, 60, 58, 62, 65, 60]);
-  const [activeConnections, setActiveConnections] = useState(1240);
-
-  // --- APP: Zenith Wallet State ---
-  const [balances, setBalances] = useState({ BTC: 0.124, ETH: 1.84, BLITZ: 4500 });
-  const [swapFrom, setSwapFrom] = useState<'BTC' | 'ETH'>('ETH');
-  const [swapAmount, setSwapAmount] = useState('0.5');
-  const [swapStatus, setSwapStatus] = useState<'idle' | 'swapping' | 'success'>('idle');
+  const playerXRef = useRef(50);
+  
+  // High-performance physics refs
+  const lasersRef = useRef<{ id: number; x: number; y: number }[]>([]);
+  const asteroidsRef = useRef<{ id: number; x: number; y: number; speed: number }[]>([]);
+  const scoreRef = useRef(0);
 
   // ==================== PROJECT CINDER (GAME) LOGIC ====================
   const startGame = () => {
     setGameState('playing');
     setScore(0);
+    scoreRef.current = 0;
     setAsteroids([]);
+    asteroidsRef.current = [];
     setLasers([]);
+    lasersRef.current = [];
+    setPlayerX(50);
+    playerXRef.current = 50;
   };
 
   // Handle ship movement inside game card
@@ -37,578 +36,372 @@ export const FeaturedProjects: React.FC = () => {
     if (gameState !== 'playing' || !gameAreaRef.current) return;
     const rect = gameAreaRef.current.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
-    setPlayerX(Math.max(5, Math.min(95, x)));
+    const clampedX = Math.max(5, Math.min(95, x));
+    setPlayerX(clampedX);
+    playerXRef.current = clampedX;
   };
 
   const handleShoot = () => {
     if (gameState !== 'playing') return;
-    setLasers((prev) => [...prev, { id: Date.now(), x: playerX, y: 80 }]);
+    const newLaser = { id: Date.now() + Math.random(), x: playerXRef.current, y: 80 };
+    lasersRef.current.push(newLaser);
+    setLasers([...lasersRef.current]);
   };
 
   // Game Loop
   useEffect(() => {
     if (gameState !== 'playing') return;
 
-    const interval = setInterval(() => {
-      // Move Lasers
-      setLasers((prev) => prev.map((l) => ({ ...l, y: l.y - 6 })).filter((l) => l.y > 0));
+    let lastTime = performance.now();
+    let animationFrameId: number;
 
-      // Move and Spawn Asteroids
-      setAsteroids((prev) => {
-        // Spawn chance
-        let updated = prev.map((a) => ({ ...a, y: a.y + a.speed }));
-        
-        // Filter out off-screen asteroids and check collision with player
-        const active = updated.filter((a) => {
-          if (a.y > 90) {
-            // Collision with bottom/player zone
-            if (Math.abs(a.x - playerX) < 15) {
-              setGameState('gameover');
-              return false;
-            }
-          }
-          return a.y < 100;
-        });
+    const gameLoop = (time: number) => {
+      const delta = time - lastTime;
+      
+      // Update physics at fixed ~30 ticks per second for steady playable pace
+      if (delta >= 33) {
+        lastTime = time;
 
-        if (Math.random() < 0.08 && active.length < 5) {
-          active.push({
-            id: Date.now() + Math.random(),
-            x: Math.random() * 90 + 5,
-            y: 0,
-            speed: Math.random() * 1.5 + 1.2,
-          });
-        }
+        // 1. Move and filter lasers
+        lasersRef.current = lasersRef.current
+          .map((l) => ({ ...l, y: l.y - 4.5 }))
+          .filter((l) => l.y > 0);
 
-        return active;
-      });
+        // 2. Move asteroids
+        asteroidsRef.current = asteroidsRef.current.map((a) => ({
+          ...a,
+          y: a.y + a.speed,
+        }));
 
-      // Collision Detection Laser vs Asteroid
-      setLasers((currentLasers) => {
+        // 3. Collision Check: Laser vs Asteroid
         let hitLasers: number[] = [];
-        setAsteroids((currentAsteroids) => {
-          let hitAsteroids: number[] = [];
-          
-          currentLasers.forEach((l) => {
-            currentAsteroids.forEach((a) => {
-              // Simple box collision
-              if (Math.abs(l.x - a.x) < 8 && Math.abs(l.y - a.y) < 8) {
-                hitLasers.push(l.id);
-                hitAsteroids.push(a.id);
-                setScore((s) => s + 100);
-              }
-            });
+        let hitAsteroids: number[] = [];
+
+        lasersRef.current.forEach((l) => {
+          asteroidsRef.current.forEach((a) => {
+            if (Math.abs(l.x - a.x) < 8 && Math.abs(l.y - a.y) < 8) {
+              hitLasers.push(l.id);
+              hitAsteroids.push(a.id);
+            }
           });
-
-          return currentAsteroids.filter((a) => !hitAsteroids.includes(a.id));
         });
-        return currentLasers.filter((l) => !hitLasers.includes(l.id));
-      });
 
-    }, 30);
-
-    return () => clearInterval(interval);
-  }, [gameState, playerX]);
-
-  // ==================== TELEMETRY LOGIC (WEB) ====================
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTelemetryData((prev) => {
-        const next = [...prev.slice(1)];
-        let base = 50;
-        if (serverStatus === 'spiked') {
-          base = 85 + Math.random() * 10;
-        } else if (serverStatus === 'stabilizing') {
-          base = 65 + Math.random() * 5;
-        } else {
-          base = 45 + Math.random() * 10;
+        if (hitAsteroids.length > 0) {
+          scoreRef.current += 100 * hitAsteroids.length;
+          setScore(scoreRef.current);
+          
+          // Remove hit entities
+          lasersRef.current = lasersRef.current.filter((l) => !hitLasers.includes(l.id));
+          asteroidsRef.current = asteroidsRef.current.filter((a) => !hitAsteroids.includes(a.id));
         }
-        next.push(Math.round(base));
-        return next;
-      });
 
-      setActiveConnections((prev) => {
-        const delta = serverStatus === 'spiked' ? 120 : (Math.random() > 0.5 ? 4 : -4);
-        return Math.max(800, prev + delta);
-      });
-    }, 1000);
+        // 4. Collision Check: Asteroid vs Player Ship
+        const playerHit = asteroidsRef.current.some((a) => {
+          return a.y > 85 && a.y < 95 && Math.abs(a.x - playerXRef.current) < 10;
+        });
 
-    return () => clearInterval(interval);
-  }, [serverStatus]);
-
-  const triggerSpike = () => {
-    setServerStatus('spiked');
-    setTimeout(() => {
-      setServerStatus('stabilizing');
-      setTimeout(() => {
-        setServerStatus('nominal');
-      }, 4000);
-    }, 2000);
-  };
-
-  // ==================== WALLET SWAP LOGIC (APP) ====================
-  const handleSwap = () => {
-    if (swapStatus !== 'idle') return;
-    const amountNum = parseFloat(swapAmount);
-    if (isNaN(amountNum) || amountNum <= 0) return;
-
-    if (swapFrom === 'ETH' && balances.ETH < amountNum) return;
-    if (swapFrom === 'BTC' && balances.BTC < amountNum) return;
-
-    setSwapStatus('swapping');
-
-    setTimeout(() => {
-      setBalances((prev) => {
-        const updated = { ...prev };
-        if (swapFrom === 'ETH') {
-          updated.ETH = Number((prev.ETH - amountNum).toFixed(4));
-          updated.BLITZ = Math.round(prev.BLITZ + amountNum * 2500);
-        } else {
-          updated.BTC = Number((prev.BTC - amountNum).toFixed(4));
-          updated.BLITZ = Math.round(prev.BLITZ + amountNum * 42000);
+        if (playerHit) {
+          setGameState('gameover');
+          return;
         }
-        return updated;
-      });
-      setSwapStatus('success');
-      setTimeout(() => setSwapStatus('idle'), 2500);
-    }, 2000);
-  };
+
+        // Filter out bottom out-of-bounds asteroids
+        asteroidsRef.current = asteroidsRef.current.filter((a) => a.y < 100);
+
+        // Spawn new Asteroids at highly playable pace and speeds
+        if (Math.random() < 0.05 && asteroidsRef.current.length < 4) {
+          asteroidsRef.current.push({
+            id: Date.now() + Math.random(),
+            x: Math.random() * 80 + 10,
+            y: 0,
+            speed: Math.random() * 0.7 + 0.6, // Slower fall speeds for a very fun, retro arcade-style balance
+          });
+        }
+
+        // Single-frame batch sync to React state for UI rendering
+        setLasers([...lasersRef.current]);
+        setAsteroids([...asteroidsRef.current]);
+      }
+
+      animationFrameId = requestAnimationFrame(gameLoop);
+    };
+
+    animationFrameId = requestAnimationFrame(gameLoop);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [gameState]);
+
+  // Delivered Projects Data
+  const deliveredProjects = [
+    {
+      id: 'avalanch',
+      title: 'Project Avalanche',
+      client: 'CoreTech Interactive',
+      type: 'Real-Time Physics Simulation',
+      year: '2025',
+      description: 'A highly scalable spatial solver simulating over 50,000 active rigid bodies inside distributed web environments. Built for absolute synchronization accuracy and minimal frame times.',
+      tags: ['Rust', 'WebAssembly', 'WebSockets', 'Tailwind'],
+    },
+    {
+      id: 'apex',
+      title: 'Project Apex',
+      client: 'Zenith Media Corp',
+      type: 'Cloud Architecture & Streaming',
+      year: '2025',
+      description: 'Delivered a high-throughput edge video delivery pipeline routing live segments globally under 20ms of edge latency. Handles up to 2.5 million concurrent requests.',
+      tags: ['Go', 'Kubernetes', 'gRPC', 'Edge CDN'],
+    },
+    {
+      id: 'neon',
+      title: 'Project Neon',
+      client: 'Apex Game Studio',
+      type: 'Creative Level Builder Toolchain',
+      year: '2024',
+      description: 'Designed a high-end desktop level authoring environment featuring instant hot-reloading, multi-threaded asset optimization, and a customizable layout engine.',
+      tags: ['React', 'Electron', 'TypeScript', 'WebAssembly'],
+    },
+    {
+      id: 'solis',
+      title: 'Project Solis',
+      client: 'Solis Prime Group',
+      type: 'High-Security Liquidity SaaS',
+      year: '2026',
+      description: 'Built a secure multi-layered ledger and transaction processing system with instant automated clearing, cryptographic authentication layers, and real-time ledger metrics.',
+      tags: ['Next.js', 'TypeScript', 'PostgreSQL', 'Cryptography'],
+    }
+  ];
 
   return (
     <section id="projects" className="py-24 md:py-32 border-t border-border bg-void text-white relative">
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         
-        {/* Section Heading */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-16">
-          <div>
-            <div className="text-blitz-red font-semibold text-xs tracking-widest uppercase mb-3">
-              PRODUCTION HEAVYWEIGHTS
-            </div>
-            <h2 className="text-4xl md:text-6xl font-display font-extrabold tracking-tight">
-              FEATURED WORKS
-            </h2>
-          </div>
+        {/* Active System Heading */}
+        <div className="mb-12">
+          <span className="text-red-500 font-mono text-sm font-bold tracking-widest uppercase block mb-3">
+            ACTIVE SYSTEM LAB // SIMULATOR
+          </span>
+          <h2 className="text-4xl md:text-6xl font-display font-extrabold tracking-tight text-white uppercase leading-none">
+            ACTIVE SHADER RESEARCH
+          </h2>
+        </div>
+
+        {/* Bento Grid: Active Game (Cinder) Showcase */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch mb-24">
           
-          {/* Custom Minimal Tabs */}
-          <div className="flex gap-2 bg-ink p-1 rounded border border-border">
-            {(['all', 'game', 'web', 'app'] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-xs font-medium uppercase tracking-wider transition-all cursor-pointer ${
-                  activeTab === tab
-                    ? 'bg-blitz-red text-white'
-                    : 'text-ash hover:text-white hover:bg-white/5'
-                }`}
+          {/* Left Column: Playable Minigame Showcase - Span 7 */}
+          <div className="lg:col-span-7 bg-ink border border-border/80 p-6 md:p-8 rounded-2xl flex flex-col justify-between min-h-[500px] relative overflow-hidden">
+            {/* Background Grid Pattern */}
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(220,38,38,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(220,38,38,0.015)_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
+            
+            <div className="relative z-10 flex justify-between items-center mb-6">
+              <span className="text-red-500 font-mono text-xs font-bold tracking-widest flex items-center gap-2">
+                <Gamepad2 className="h-4.5 w-4.5" /> ACTIVE CORE // FLUID RECONCILIATION
+              </span>
+              <span className="text-gray-300 font-mono text-xs">CINDER_V1.2_STABLE</span>
+            </div>
+
+            {/* PLAYABLE MINIGAME INNER CONTAINER */}
+            <div className="my-2 flex-grow relative bg-void border border-border overflow-hidden select-none min-h-[280px] rounded-lg">
+              {gameState === 'idle' && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+                  <div className="absolute inset-0 bg-gradient-to-t from-void via-void/50 to-transparent pointer-events-none" />
+                  <p className="text-white font-space text-lg font-bold mb-4 uppercase tracking-wider">PROJECT CINDER SIMULATION</p>
+                  <p className="text-gray-200 text-sm mb-6 max-w-xs font-sans leading-relaxed">
+                    Test the sub-millisecond input responsiveness of our core vector mechanics directly in this sandbox.
+                  </p>
+                  <motion.button 
+                    onClick={startGame}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                    className="px-6 py-3.5 bg-blitz-red text-white text-xs font-mono font-bold uppercase tracking-widest hover:bg-red-700 transition-colors flex items-center gap-2 cursor-pointer rounded-xl active:scale-[0.98] shadow-lg shadow-red-600/20"
+                  >
+                    <Play className="h-4 w-4 fill-white" /> INITIALIZE SIMULATION
+                  </motion.button>
+                </div>
+              )}
+
+              {gameState === 'playing' && (
+                <div 
+                  ref={gameAreaRef}
+                  onMouseMove={handleMouseMove}
+                  onClick={handleShoot}
+                  className="absolute inset-0 cursor-crosshair overflow-hidden"
+                >
+                  {/* Dashboard Score */}
+                  <div className="absolute top-3 left-4 font-mono text-xs text-white/80 flex gap-4 bg-void/85 px-3 py-1.5 rounded border border-border/50">
+                    <span>SCORE: <strong className="text-red-500 font-bold">{score}</strong></span>
+                    <span>SHIELD: <strong className="text-green-400 font-bold">100%</strong></span>
+                  </div>
+                  
+                  {/* Lasers */}
+                  {lasers.map((l) => (
+                    <div 
+                      key={l.id} 
+                      className="absolute w-1 h-3.5 bg-red-500"
+                      style={{ left: `${l.x}%`, top: `${l.y}%`, transform: 'translateX(-50%)' }}
+                    />
+                  ))}
+
+                  {/* Asteroids */}
+                  {asteroids.map((a) => (
+                    <div 
+                      key={a.id} 
+                      className="absolute w-4 h-4 bg-white border border-blitz-red"
+                      style={{ left: `${a.x}%`, top: `${a.y}%`, transform: 'translateX(-50%) rotate(45deg)' }}
+                    />
+                  ))}
+
+                  {/* Player Ship */}
+                  <div 
+                    className="absolute bottom-4 flex flex-col items-center"
+                    style={{ left: `${playerX}%`, transform: 'translateX(-50%)', transition: 'left 0.05s ease-out' }}
+                  >
+                    <div className="w-1 h-3 bg-blitz-red mb-1 animate-pulse" />
+                    <div className="w-6 h-2 bg-white" />
+                    <div className="w-10 h-1 bg-blitz-red" />
+                  </div>
+                </div>
+              )}
+
+              {gameState === 'gameover' && (
+                <div className="absolute inset-0 bg-void/90 flex flex-col items-center justify-center p-6 text-center">
+                  <p className="text-red-500 font-space text-2xl font-bold tracking-tight mb-2">SIMULATION TERMINATED</p>
+                  <p className="text-white text-sm mb-5 font-mono">CORE DEFLECTION OVERLOADED // SCORE: {score}</p>
+                  <motion.button 
+                    onClick={startGame}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                    className="px-6 py-3 bg-white text-black text-xs font-mono font-bold uppercase tracking-widest hover:bg-gray-200 transition-colors flex items-center gap-2 cursor-pointer rounded-full active:scale-[0.98] shadow-lg shadow-white/10"
+                  >
+                    <RotateCcw className="h-4 w-4" /> RESET ENGINE
+                  </motion.button>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-6 border-t border-border pt-5 mt-4 text-xs font-mono text-gray-200">
+              <div className="flex-1">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-red-500">Performance</div>
+                <div className="text-white font-medium">120 FPS // Ultra Latency</div>
+              </div>
+              <div className="flex-1">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-red-500">Render pipeline</div>
+                <div className="text-white font-medium">Native Canvas Vector</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Technical Spec Sheet - Span 5 */}
+          <div className="lg:col-span-5 bg-[#0c0c0d] border border-border/80 p-6 md:p-8 rounded-2xl flex flex-col justify-between">
+            <div>
+              <span className="text-red-500 font-mono text-xs font-bold tracking-widest block mb-3 uppercase">
+                SPECIFICATIONS SHEET
+              </span>
+              <h3 className="text-3xl font-display font-extrabold tracking-tight text-white mb-4 uppercase leading-none">
+                PROJECT CINDER
+              </h3>
+              <p className="text-gray-200 text-sm leading-relaxed mb-6 font-sans font-normal">
+                A hyper-responsive retro action core designed to stress-test high-speed user inputs, deterministic physics loops, and smooth multi-layer rendering directly within high-performance web spaces.
+              </p>
+
+              <div className="space-y-4 border-t border-white/5 pt-6">
+                <div>
+                  <h4 className="text-xs font-mono uppercase tracking-widest text-red-500 font-bold mb-1">DETERMINISTIC SIMULATION</h4>
+                  <p className="text-gray-100 font-sans text-xs">Physics updates run at a static 30Hz frame step decoupled from visual refresh rate to preserve synchronization consistency.</p>
+                </div>
+                <div>
+                  <h4 className="text-xs font-mono uppercase tracking-widest text-red-500 font-bold mb-1">PLATFORM COMPATIBILITY</h4>
+                  <p className="text-gray-100 font-sans text-xs">Architected for compilation into custom WebAssembly cores and native wrapper runtimes on modern consoles (PS5, Switch).</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-white/5 pt-6 mt-6">
+              <div className="flex flex-wrap gap-2">
+                {['C++', 'WebAssembly', 'HTML5 Canvas', 'Framer Motion'].map((tech) => (
+                  <span key={tech} className="text-xs font-mono tracking-wider px-3 py-1 bg-[#121214] border border-border/80 text-white rounded-md">
+                    {tech}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* ==================== STUDIO PORTFOLIO HERO WITH INTEGRATED MATRIX CANVAS ==================== */}
+        <div className="mt-28 mb-20">
+          <div className="mb-10">
+            <span className="text-red-500 font-mono text-sm font-bold tracking-widest uppercase block mb-3">
+              DELIVERED SYSTEMS & RECURSIVE MATRIX WORK HISTORY
+            </span>
+            <h3 className="text-3xl md:text-5xl font-display font-extrabold tracking-tight text-white uppercase leading-none">
+              STUDIO PORTFOLIO
+            </h3>
+            <p className="text-gray-200 text-sm md:text-base max-w-2xl mt-4 leading-relaxed">
+              Interact with our live vector matrix that dynamically renders the portfolio heading. Below, explore our high-end delivered commercial and independent digital engineering artifacts.
+            </p>
+          </div>
+
+          <div className="mb-16">
+            <PortfolioInteractiveCanvas />
+          </div>
+        </div>
+
+        {/* Delivered Systems Grid */}
+        <div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {deliveredProjects.map((proj) => (
+              <motion.div
+                key={proj.id}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: 0.5 }}
+                className="border border-border/80 bg-[#0c0c0d] p-8 rounded-2xl relative flex flex-col justify-between min-h-[280px] transition-all duration-300 hover:scale-[1.01] hover:border-blitz-red hover:shadow-[0_0_35px_rgba(220,38,38,0.08)] group"
               >
-                {tab === 'all' ? 'All Pillar' : tab}s
-              </button>
+                <div>
+                  <div className="flex justify-between items-start mb-6">
+                    <div>
+                      <span className="text-red-500 font-mono text-xs font-bold tracking-widest uppercase block mb-2">
+                        {proj.type.toUpperCase()}
+                      </span>
+                      {/* Changed card title font to font-space (Space Grotesk) to improve readability of copy */}
+                      <h4 className="text-2xl font-space font-bold text-white uppercase group-hover:text-red-500 transition-colors duration-200">
+                        {proj.title}
+                      </h4>
+                    </div>
+                    <span className="font-mono text-xs text-gray-400 group-hover:text-red-500 font-bold transition-colors duration-200">
+                      //{proj.year}
+                    </span>
+                  </div>
+
+                  <p className="text-gray-100 text-sm md:text-base leading-relaxed font-sans font-normal mb-8">
+                    {proj.description}
+                  </p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-6 border-t border-white/5">
+                  <div className="flex flex-wrap gap-2">
+                    {proj.tags.map((tag) => (
+                      <span key={tag} className="text-[10px] font-mono tracking-wider px-2.5 py-1 bg-[#121214] border border-border/80 text-white rounded">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                  <span className="text-xs font-mono text-gray-300 group-hover:text-white flex items-center gap-1 transition-colors duration-200 font-medium">
+                    CLIENT: {proj.client.toUpperCase()}
+                  </span>
+                </div>
+              </motion.div>
             ))}
           </div>
         </div>
 
-        {/* Bento Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
-          {/* COLUMN 1: Retro Bullet-Hell Showcase (GAME) - Span 7 */}
-          <AnimatePresence mode="popLayout">
-            {(activeTab === 'all' || activeTab === 'game') && (
-              <motion.div
-                layout
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.4, ease: 'easeOut' }}
-                className="col-span-1 lg:col-span-7 bg-ink border border-border p-8 flex flex-col justify-between h-[580px] relative overflow-hidden"
-              >
-                {/* Background Grid Pattern */}
-                <div className="absolute inset-0 bg-[linear-gradient(rgba(220,38,38,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(220,38,38,0.02)_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
-                
-                <div>
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="text-blitz-red font-mono text-xs tracking-widest flex items-center gap-2">
-                      <Gamepad2 className="h-4 w-4" /> ENGINE // PLATFORM
-                    </span>
-                    <span className="text-ash font-mono text-xs">CINDER_V1.1_STABLE</span>
-                  </div>
-                  
-                  <h3 className="text-3xl font-display font-extrabold tracking-tight text-white mb-2">
-                    PROJECT CINDER
-                  </h3>
-                  <p className="text-ash text-sm max-w-md leading-relaxed">
-                    A hyper-responsive retro rogue-lite game built on custom-crafted light canvas loops. Click inside to steer and shoot.
-                  </p>
-                </div>
-
-                {/* PLAYABLE MINIGAME INNER CONTAINER */}
-                <div className="my-6 flex-grow relative bg-void border border-border overflow-hidden select-none">
-                  {gameState === 'idle' && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
-                      <div className="absolute inset-0 bg-gradient-to-t from-void to-transparent pointer-events-none" />
-                      <p className="text-white font-display text-lg font-bold mb-4">TEST GAMEPLAY SYSTEM</p>
-                      <button 
-                        onClick={startGame}
-                        className="px-6 py-3 bg-blitz-red text-white text-xs font-bold uppercase tracking-widest hover:bg-red-700 transition-colors flex items-center gap-2 cursor-pointer"
-                      >
-                        <Play className="h-4 w-4 fill-white" /> INITIALIZE SIMULATION
-                      </button>
-                    </div>
-                  )}
-
-                  {gameState === 'playing' && (
-                    <div 
-                      ref={gameAreaRef}
-                      onMouseMove={handleMouseMove}
-                      onClick={handleShoot}
-                      className="absolute inset-0 cursor-crosshair overflow-hidden"
-                    >
-                      {/* Dashboard Score */}
-                      <div className="absolute top-3 left-3 font-mono text-xs text-white/40 flex gap-4">
-                        <span>SCORE: <strong className="text-blitz-red">{score}</strong></span>
-                        <span>SHIELD: <strong className="text-green-500">100%</strong></span>
-                      </div>
-                      
-                      {/* Lasers */}
-                      {lasers.map((l) => (
-                        <div 
-                          key={l.id} 
-                          className="absolute w-1 h-3 bg-red-500 shadow-sm"
-                          style={{ left: `${l.x}%`, top: `${l.y}%`, transform: 'translateX(-50%)' }}
-                        />
-                      ))}
-
-                      {/* Asteroids */}
-                      {asteroids.map((a) => (
-                        <div 
-                          key={a.id} 
-                          className="absolute w-4 h-4 bg-white border border-blitz-red"
-                          style={{ left: `${a.x}%`, top: `${a.y}%`, transform: 'translateX(-50%) rotate(45deg)' }}
-                        />
-                      ))}
-
-                      {/* Player Ship */}
-                      <div 
-                        className="absolute bottom-4 flex flex-col items-center"
-                        style={{ left: `${playerX}%`, transform: 'translateX(-50%)', transition: 'left 0.05s ease-out' }}
-                      >
-                        <div className="w-1 h-3 bg-blitz-red mb-1 animate-pulse" />
-                        <div className="w-6 h-2 bg-white" />
-                        <div className="w-10 h-1 bg-blitz-red" />
-                      </div>
-                    </div>
-                  )}
-
-                  {gameState === 'gameover' && (
-                    <div className="absolute inset-0 bg-void/90 flex flex-col items-center justify-center p-6 text-center">
-                      <p className="text-blitz-red font-display text-2xl font-bold tracking-tight mb-2">SIMULATION TERMINATED</p>
-                      <p className="text-ash text-xs mb-4 font-mono">CORE DEFLECTION OVERLOADED // SCORE: {score}</p>
-                      <button 
-                        onClick={startGame}
-                        className="px-6 py-3 bg-white text-black text-xs font-bold uppercase tracking-widest hover:bg-gray-200 transition-colors flex items-center gap-2 cursor-pointer"
-                      >
-                        <RotateCcw className="h-4 w-4" /> RESET ENGINE
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex gap-4 border-t border-border pt-4">
-                  <div className="flex-1">
-                    <div className="text-[10px] font-mono text-ash uppercase">Performance</div>
-                    <div className="text-sm font-semibold">120 FPS // Ultra Latency</div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-[10px] font-mono text-ash uppercase">Target Platforms</div>
-                    <div className="text-sm font-semibold">Steam, PlayStation 5, Switch</div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* COLUMN 2: Full-Stack Web Telemetry (WEB) - Span 5 */}
-          <AnimatePresence mode="popLayout">
-            {(activeTab === 'all' || activeTab === 'web') && (
-              <motion.div
-                layout
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.4, ease: 'easeOut' }}
-                className="col-span-1 lg:col-span-5 bg-ink border border-border p-8 flex flex-col justify-between h-[580px] relative overflow-hidden"
-              >
-                <div>
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="text-blitz-red font-mono text-xs tracking-widest flex items-center gap-2">
-                      <Activity className="h-4 w-4" /> WEBS // TELEMETRY
-                    </span>
-                    <span className="text-ash font-mono text-xs">AETHER_FLOW_CLOUD</span>
-                  </div>
-                  
-                  <h3 className="text-3xl font-display font-extrabold tracking-tight text-white mb-2">
-                    AETHER CRM
-                  </h3>
-                  <p className="text-ash text-sm leading-relaxed mb-4">
-                    Enterprise web infrastructures crafted with custom server-side pipelines. Check live performance and trigger traffic simulation.
-                  </p>
-                </div>
-
-                {/* LIVE CRM CHART MOCKUP */}
-                <div className="my-4 bg-void p-6 border border-border relative overflow-hidden flex flex-col justify-between h-56">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <div className="text-[10px] font-mono text-ash uppercase">Current Traffic Load</div>
-                      <div className="text-2xl font-mono font-bold text-white flex items-center gap-2">
-                        {activeConnections} <span className="text-xs text-green-400">rps</span>
-                      </div>
-                    </div>
-                    
-                    <button 
-                      onClick={triggerSpike}
-                      disabled={serverStatus !== 'nominal'}
-                      className={`px-3 py-1.5 font-mono text-[10px] uppercase border tracking-widest transition-colors cursor-pointer ${
-                        serverStatus === 'nominal'
-                          ? 'border-blitz-red text-blitz-red hover:bg-blitz-red hover:text-white'
-                          : 'border-white/10 text-ash cursor-not-allowed'
-                      }`}
-                    >
-                      {serverStatus === 'nominal' ? 'SPIKE INGRESS' : 'PROCESSING...'}
-                    </button>
-                  </div>
-
-                  {/* SVG Chart Wave */}
-                  <div className="h-24 w-full flex items-end">
-                    <svg className="w-full h-full" viewBox="0 0 100 40" preserveAspectRatio="none">
-                      <defs>
-                        <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="rgb(220, 38, 38)" stopOpacity="0.4" />
-                          <stop offset="100%" stopColor="rgb(220, 38, 38)" stopOpacity="0.0" />
-                        </linearGradient>
-                      </defs>
-                      
-                      {/* Area */}
-                      <path
-                        d={`M 0 40 ${telemetryData.map((val, idx) => `L ${(idx / (telemetryData.length - 1)) * 100} ${40 - (val / 100) * 35}`).join(' ')} L 100 40 Z`}
-                        fill="url(#chartGrad)"
-                        className="transition-all duration-500 ease-out"
-                      />
-                      
-                      {/* Line */}
-                      <path
-                        d={telemetryData.map((val, idx) => `${idx === 0 ? 'M' : 'L'} ${(idx / (telemetryData.length - 1)) * 100} ${40 - (val / 100) * 35}`).join(' ')}
-                        fill="none"
-                        stroke="rgb(220, 38, 38)"
-                        strokeWidth="1.5"
-                        className="transition-all duration-500 ease-out"
-                      />
-                    </svg>
-                  </div>
-
-                  <div className="flex justify-between font-mono text-[9px] text-ash border-t border-white/5 pt-2">
-                    <span>STATUS: <span className={serverStatus === 'nominal' ? 'text-green-400' : 'text-blitz-red font-bold animate-pulse'}>{serverStatus.toUpperCase()}</span></span>
-                    <span>SERVER LOAD: {telemetryData[telemetryData.length - 1]}%</span>
-                  </div>
-                </div>
-
-                <div className="flex gap-4 border-t border-border pt-4">
-                  <div className="flex-1">
-                    <div className="text-[10px] font-mono text-ash uppercase">Global Response</div>
-                    <div className="text-sm font-semibold">14ms Edge Latency</div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-[10px] font-mono text-ash uppercase">Architecture</div>
-                    <div className="text-sm font-semibold">Serverless Caching</div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* COLUMN 3: Zenith Crypto Wallet (MOBILE APP) - Span 5 */}
-          <AnimatePresence mode="popLayout">
-            {(activeTab === 'all' || activeTab === 'app') && (
-              <motion.div
-                layout
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.4, ease: 'easeOut' }}
-                className="col-span-1 lg:col-span-5 bg-ink border border-border p-8 flex flex-col justify-between h-[580px] relative overflow-hidden"
-              >
-                <div>
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="text-blitz-red font-mono text-xs tracking-widest flex items-center gap-2">
-                      <Smartphone className="h-4 w-4" /> APPS // DECENTRALIZED
-                    </span>
-                    <span className="text-ash font-mono text-xs">ZENITH_APP_V3</span>
-                  </div>
-                  
-                  <h3 className="text-3xl font-display font-extrabold tracking-tight text-white mb-2">
-                    ZENITH APPS
-                  </h3>
-                  <p className="text-ash text-sm leading-relaxed">
-                    Ultra-fluid cross-platform mobile apps for finance and web3. Test the built-in gasless swap mechanism below.
-                  </p>
-                </div>
-
-                {/* SWAP CARD MOCKUP */}
-                <div className="my-4 bg-void p-5 border border-border relative overflow-hidden flex flex-col justify-between h-56">
-                  <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                    <span className="text-[10px] font-mono text-ash">ZENITH SWAP GATEWAY</span>
-                    <div className="flex gap-3 text-xs font-mono text-white/50">
-                      <span>ETH: {balances.ETH}</span>
-                      <span>BTC: {balances.BTC}</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 my-2">
-                    {/* Amount input */}
-                    <div className="flex justify-between items-center bg-ink/50 p-2.5 border border-border rounded">
-                      <div className="flex flex-col">
-                        <span className="text-[8px] font-mono text-ash">YOU SEND</span>
-                        <input
-                          type="number"
-                          value={swapAmount}
-                          onChange={(e) => setSwapAmount(e.target.value)}
-                          className="bg-transparent text-white font-mono text-sm focus:outline-none w-24 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        />
-                      </div>
-                      <select 
-                        value={swapFrom} 
-                        onChange={(e) => setSwapFrom(e.target.value as 'BTC' | 'ETH')}
-                        className="bg-void text-xs font-mono text-white border border-border px-2 py-1 focus:outline-none"
-                      >
-                        <option value="ETH">ETH</option>
-                        <option value="BTC">BTC</option>
-                      </select>
-                    </div>
-
-                    {/* Receive preview */}
-                    <div className="flex justify-between items-center bg-ink/50 p-2.5 border border-border rounded">
-                      <div className="flex flex-col">
-                        <span className="text-[8px] font-mono text-ash">YOU GET</span>
-                        <span className="text-sm font-mono text-white">
-                          {Number(swapAmount) > 0 ? (Number(swapAmount) * (swapFrom === 'ETH' ? 2500 : 42000)).toLocaleString() : '0'}
-                        </span>
-                      </div>
-                      <span className="text-xs font-mono text-blitz-red font-bold">BLITZ</span>
-                    </div>
-                  </div>
-
-                  {/* Swap Trigger Button */}
-                  <button 
-                    onClick={handleSwap}
-                    disabled={swapStatus !== 'idle'}
-                    className="w-full py-2.5 bg-blitz-red text-white font-bold text-xs uppercase tracking-widest hover:bg-red-700 transition-colors flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    {swapStatus === 'idle' && (
-                      <>EXECUTE DEFI SWAP</>
-                    )}
-                    {swapStatus === 'swapping' && (
-                      <>
-                        <RefreshCw className="h-3.5 w-3.5 animate-spin" /> COMMITTING TRANSACTION
-                      </>
-                    )}
-                    {swapStatus === 'success' && (
-                      <>
-                        <ShieldCheck className="h-4 w-4 text-white" /> SUCCESS // BLITZ INJECTED
-                      </>
-                    )}
-                  </button>
-                </div>
-
-                <div className="flex gap-4 border-t border-border pt-4">
-                  <div className="flex-1">
-                    <div className="text-[10px] font-mono text-ash uppercase">Sync Latency</div>
-                    <div className="text-sm font-semibold">&lt; 100ms Global</div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-[10px] font-mono text-ash uppercase">Wallet Bal</div>
-                    <div className="text-sm font-semibold">{balances.BLITZ} BLITZ</div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* COLUMN 4: Creative Labs Showcase - Span 7 */}
-          <AnimatePresence mode="popLayout">
-            {(activeTab === 'all') && (
-              <motion.div
-                layout
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.4, ease: 'easeOut' }}
-                className="col-span-1 lg:col-span-7 bg-ink border border-border p-8 flex flex-col justify-between h-[580px] relative overflow-hidden"
-              >
-                <div>
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="text-blitz-red font-mono text-xs tracking-widest flex items-center gap-2">
-                      <Cpu className="h-4 w-4" /> RESEARCH & EXPERIMENTS
-                    </span>
-                    <span className="text-ash font-mono text-xs">BLITZ_LABS_09</span>
-                  </div>
-                  
-                  <h3 className="text-3xl font-display font-extrabold tracking-tight text-white mb-2">
-                    EXPERIMENTAL PHYSICS
-                  </h3>
-                  <p className="text-ash text-sm max-w-md leading-relaxed">
-                    Developing and stress-testing cutting-edge physical vectors, custom shaders, and hyper-responsive user controls that represent the next-generation interfaces.
-                  </p>
-                </div>
-
-                {/* VISUAL INTERACTIVE PHYSICS CANVAS CONTAINER */}
-                <div className="my-6 bg-void border border-border overflow-hidden h-64 relative group select-none">
-                  <div className="absolute inset-0 bg-radial-gradient from-blitz-red/10 to-transparent pointer-events-none" />
-                  
-                  <div className="absolute inset-0 p-4 flex flex-col justify-between">
-                    <div className="flex justify-between">
-                      <span className="text-[9px] font-mono text-white/40">VIRTUAL PHYSICS ENGINE</span>
-                      <span className="text-[9px] font-mono text-white/40">VECTOR FIELD: INVERSE SQUARE</span>
-                    </div>
-
-                    <div className="w-full h-32 flex items-center justify-around">
-                      {[1, 2, 3, 4, 5].map((i) => (
-                        <motion.div
-                          key={i}
-                          animate={{
-                            height: [40, 120, 60, 140, 40],
-                            y: [0, -10, 5, -5, 0]
-                          }}
-                          transition={{
-                            duration: 2 + i * 0.3,
-                            repeat: Infinity,
-                            ease: "easeInOut"
-                          }}
-                          className="w-4 bg-gradient-to-t from-blitz-red to-white border border-border"
-                        />
-                      ))}
-                    </div>
-
-                    <div className="text-center">
-                      <p className="text-[10px] font-mono text-ash">
-                        HOVER / CLICK TO INJECT WAVE FORCES
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex gap-4 border-t border-border pt-4">
-                  <div className="flex-1">
-                    <div className="text-[10px] font-mono text-ash uppercase">Render pipeline</div>
-                    <div className="text-sm font-semibold">WebGPU / Canvas2D</div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-[10px] font-mono text-ash uppercase">Lab Status</div>
-                    <div className="text-sm font-semibold">9 Active Experiments</div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-        </div>
       </div>
     </section>
   );
 };
+export default FeaturedProjects;

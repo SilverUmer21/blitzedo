@@ -29,3 +29,12 @@ export interface ParticleConfig {
   particleCountFactor: number; // e.g. 12000 (standard), 6000 (dense), 24000 (sparse)
   speed: number;
 }
+
+export interface SandboxConfig {
+  particleColor: string;
+  lineColor: string;
+  mouseRadius: number;
+  densityFactor: number;
+  speedFactor: number;
+  themeName: string;
+}

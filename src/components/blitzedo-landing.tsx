@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Terminal, ArrowRight, Gamepad2, Monitor, Smartphone, MessageSquare, ChevronRight, CheckCircle, ShieldCheck, Cpu, Sparkles, Send, Globe } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { ArrowRight, Gamepad2, Smartphone, CheckCircle, ShieldCheck, Sparkles, Send, Globe } from 'lucide-react';
 import { FeaturedProjects } from './featured-projects';
 import { ProjectPlanner } from './project-planner';
-import { ParticleSandbox, SandboxConfig } from './particle-sandbox';
 import BlitzParticleBg from './ui/blitz-particle-bg';
+import { SandboxConfig } from '../types';
 
 interface BlitzedoLandingProps {
   sandboxConfig: SandboxConfig;
@@ -47,7 +47,7 @@ export const BlitzedoLanding: React.FC<BlitzedoLandingProps> = ({
       </div>
 
       {/* Sticky Navigation Bar */}
-      <header className="fixed top-0 left-0 w-full z-50 border-b border-border/80 bg-void/80 backdrop-blur-md">
+      <header className="fixed top-0 left-0 w-full z-50 border-b border-border/80 bg-void/85 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           {/* Logo */}
           <a href="#" className="flex items-center gap-2">
@@ -57,22 +57,39 @@ export const BlitzedoLanding: React.FC<BlitzedoLandingProps> = ({
           </a>
 
           {/* Nav Items */}
-          <nav className="hidden md:flex items-center gap-8 font-mono text-xs tracking-wider">
-            <a href="#projects" className="text-ash hover:text-white transition-colors">PROJECTS</a>
-            <a href="#planner" className="text-ash hover:text-white transition-colors">COMPILER</a>
-            <a href="#sandbox-section" className="text-ash hover:text-white transition-colors">SANDBOX</a>
-            <a href="#about" className="text-ash hover:text-white transition-colors">PILLARS</a>
-            <a href="#contact" className="text-ash hover:text-white transition-colors">GET IN TOUCH</a>
+          <nav className="hidden md:flex items-center gap-10 font-mono text-xs tracking-widest text-ash">
+            <a href="#projects" className="hover:text-white transition-colors duration-200">PROJECTS</a>
+            <a href="#planner" className="hover:text-white transition-colors duration-200">COMPILER</a>
+            <a href="#about" className="hover:text-white transition-colors duration-200">PILLARS</a>
           </nav>
 
           {/* Action Call / Get In Touch */}
           <div className="flex items-center gap-4">
-            <a
+            <motion.a
               href="#contact"
-              className="px-5 py-2.5 border border-blitz-red text-white hover:bg-blitz-red/10 text-xs font-mono font-bold tracking-widest transition-all duration-300 uppercase cursor-pointer relative overflow-hidden shadow-[0_0_15px_rgba(220,38,38,0.1)] hover:shadow-[0_0_25px_rgba(220,38,38,0.25)] rounded-sm"
+              whileHover={{ scale: 1.04, y: -1 }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ type: "spring", stiffness: 400, damping: 15 }}
+              className="px-6 py-2.5 border border-red-500/30 hover:border-red-500 text-white bg-red-500/5 hover:bg-red-500/10 text-xs font-mono font-bold tracking-widest transition-all duration-300 uppercase cursor-pointer rounded-full active:scale-[0.98] flex items-center gap-1.5 group shadow-[0_0_15px_rgba(239,68,68,0.1)] hover:shadow-[0_0_20px_rgba(239,68,68,0.2)]"
             >
               Get In Touch
-            </a>
+              <svg
+                className="ml-[0.1em] h-3.5 w-3.5 transition-none text-red-500"
+                fill="none"
+                viewBox="0 0 10 10"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path
+                  d="M1.004 9.166 9.337.833m0 0v8.333m0-8.333H1.004"
+                  stroke="currentColor"
+                  strokeWidth="1.25"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="[stroke-dasharray:32] [stroke-dashoffset:32] transition-[stroke-dashoffset] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] group-hover:[stroke-dashoffset:0]"
+                />
+              </svg>
+            </motion.a>
           </div>
         </div>
       </header>
@@ -86,7 +103,7 @@ export const BlitzedoLanding: React.FC<BlitzedoLandingProps> = ({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.1, ease: 'easeOut' }}
-            className="text-5xl md:text-8xl font-display font-extrabold tracking-tight text-white mb-8 uppercase leading-[0.88]"
+            className="text-3xl sm:text-6xl md:text-8xl font-display font-extrabold tracking-tight text-white mb-8 uppercase leading-[0.95] sm:leading-[0.88]"
           >
             We build <span className="text-blitz-red">high-octane</span> digital products<span className="text-blitz-red">.</span>
           </motion.h1>
@@ -98,22 +115,56 @@ export const BlitzedoLanding: React.FC<BlitzedoLandingProps> = ({
             transition={{ duration: 0.8, delay: 0.3, ease: 'easeOut' }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
-            <a
+            <motion.a
               href="#planner"
-              className="relative group overflow-hidden px-8 py-4 border border-blitz-red bg-blitz-red/10 text-white text-xs font-bold uppercase tracking-widest transition-all duration-300 flex items-center gap-2 w-full sm:w-auto justify-center cursor-pointer shadow-[0_0_15px_rgba(220,38,38,0.15)] hover:shadow-[0_0_30px_rgba(220,38,38,0.4)] hover:bg-blitz-red rounded-sm"
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.96 }}
+              transition={{ type: "spring", stiffness: 400, damping: 15 }}
+              className="px-8 py-4 bg-red-600 text-white hover:bg-red-500 transition-all duration-300 flex items-center gap-2.5 w-full sm:w-auto justify-center cursor-pointer rounded-full font-mono text-xs font-bold tracking-widest active:scale-[0.98] group shadow-[0_0_25px_rgba(220,38,38,0.25)] hover:shadow-[0_0_35px_rgba(220,38,38,0.45)] border border-red-500/30"
             >
-              <span className="relative z-10 flex items-center gap-2 font-mono text-xs">
-                RUN BLUEPRINT COMPILER <ArrowRight className="h-4 w-4 group-hover:translate-x-1.5 transition-transform duration-300" />
-              </span>
-            </a>
-            <a
+              RUN BLUEPRINT COMPILER
+              <svg
+                className="ml-[0.1em] h-3.5 w-3.5 transition-none text-white"
+                fill="none"
+                viewBox="0 0 10 10"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path
+                  d="M1.004 9.166 9.337.833m0 0v8.333m0-8.333H1.004"
+                  stroke="currentColor"
+                  strokeWidth="1.25"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="[stroke-dasharray:32] [stroke-dashoffset:32] transition-[stroke-dashoffset] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] group-hover:[stroke-dashoffset:0]"
+                />
+              </svg>
+            </motion.a>
+            <motion.a
               href="#projects"
-              className="relative group overflow-hidden px-8 py-4 border border-white/20 bg-ink/30 text-white hover:text-white hover:border-white text-xs font-bold uppercase tracking-widest transition-all duration-300 flex items-center gap-2 w-full sm:w-auto justify-center cursor-pointer hover:bg-white/5 rounded-sm"
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.96 }}
+              transition={{ type: "spring", stiffness: 400, damping: 15 }}
+              className="px-8 py-4 border border-white/10 bg-white/[0.02] text-white hover:bg-white/[0.08] hover:border-red-500/40 transition-all duration-300 flex items-center gap-2.5 w-full sm:w-auto justify-center cursor-pointer rounded-full font-mono text-xs font-bold tracking-widest active:scale-[0.98] group hover:shadow-[0_0_25px_rgba(239,68,68,0.1)]"
             >
-              <span className="relative z-10 flex items-center gap-2 font-mono text-xs">
-                EXPLORE RECENT WORKS <Sparkles className="h-4 w-4 group-hover:rotate-12 transition-transform duration-300 text-blitz-red" />
-              </span>
-            </a>
+              EXPLORE RECENT WORKS
+              <svg
+                className="ml-[0.1em] h-3.5 w-3.5 transition-none text-red-500"
+                fill="none"
+                viewBox="0 0 10 10"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path
+                  d="M1.004 9.166 9.337.833m0 0v8.333m0-8.333H1.004"
+                  stroke="currentColor"
+                  strokeWidth="1.25"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="[stroke-dasharray:32] [stroke-dashoffset:32] transition-[stroke-dashoffset] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] group-hover:[stroke-dashoffset:0]"
+                />
+              </svg>
+            </motion.a>
           </motion.div>
         </div>
 
@@ -164,24 +215,24 @@ export const BlitzedoLanding: React.FC<BlitzedoLandingProps> = ({
                       Game Design & Dev
                     </h3>
                   </div>
-                  <span className="font-mono text-xs text-ash/30 group-hover:text-blitz-red transition-colors duration-300">
+                  <span className="font-mono text-xs text-red-500 font-bold group-hover:text-blitz-red transition-colors duration-300">
                     01
                   </span>
                 </div>
                 
-                <p className="text-ash text-sm leading-relaxed font-sans mb-8 group-hover:text-white/90 transition-colors duration-300">
+                <p className="text-gray-200 text-sm leading-relaxed font-sans mb-8 group-hover:text-white transition-colors duration-300">
                   Unity and Unreal projects from prototype to launch. Level design, mechanics, UI, and the full production pipeline.
                 </p>
               </div>
 
               <div className="flex flex-wrap gap-2">
-                <span className="text-[10px] font-mono tracking-wider px-3 py-1 bg-[#121214] border border-border/80 text-ash rounded-md group-hover:border-blitz-red/20 group-hover:text-white transition-all duration-300">
+                <span className="text-[10px] font-mono tracking-wider px-3 py-1 bg-[#121214] border border-border/80 text-white rounded-md group-hover:border-blitz-red/20 group-hover:text-white transition-all duration-300">
                   Unity
                 </span>
-                <span className="text-[10px] font-mono tracking-wider px-3 py-1 bg-[#121214] border border-border/80 text-ash rounded-md group-hover:border-blitz-red/20 group-hover:text-white transition-all duration-300">
+                <span className="text-[10px] font-mono tracking-wider px-3 py-1 bg-[#121214] border border-border/80 text-white rounded-md group-hover:border-blitz-red/20 group-hover:text-white transition-all duration-300">
                   Unreal
                 </span>
-                <span className="text-[10px] font-mono tracking-wider px-3 py-1 bg-[#121214] border border-border/80 text-ash rounded-md group-hover:border-blitz-red/20 group-hover:text-white transition-all duration-300">
+                <span className="text-[10px] font-mono tracking-wider px-3 py-1 bg-[#121214] border border-border/80 text-white rounded-md group-hover:border-blitz-red/20 group-hover:text-white transition-all duration-300">
                   Godot
                 </span>
               </div>
@@ -208,24 +259,24 @@ export const BlitzedoLanding: React.FC<BlitzedoLandingProps> = ({
                       Web Development
                     </h3>
                   </div>
-                  <span className="font-mono text-xs text-ash/30 group-hover:text-blitz-red transition-colors duration-300">
+                  <span className="font-mono text-xs text-red-500 font-bold group-hover:text-blitz-red transition-colors duration-300">
                     02
                   </span>
                 </div>
                 
-                <p className="text-ash text-sm leading-relaxed font-sans mb-8 group-hover:text-white/90 transition-colors duration-300">
+                <p className="text-gray-200 text-sm leading-relaxed font-sans mb-8 group-hover:text-white transition-colors duration-300">
                   Landing pages and web apps that perform. Next.js, React, and the modern stack — built to be fast, not just to look fast.
                 </p>
               </div>
 
               <div className="flex flex-wrap gap-2">
-                <span className="text-[10px] font-mono tracking-wider px-3 py-1 bg-[#121214] border border-border/80 text-ash rounded-md group-hover:border-blitz-red/20 group-hover:text-white transition-all duration-300">
+                <span className="text-[10px] font-mono tracking-wider px-3 py-1 bg-[#121214] border border-border/80 text-white rounded-md group-hover:border-blitz-red/20 group-hover:text-white transition-all duration-300">
                   Next.js
                 </span>
-                <span className="text-[10px] font-mono tracking-wider px-3 py-1 bg-[#121214] border border-border/80 text-ash rounded-md group-hover:border-blitz-red/20 group-hover:text-white transition-all duration-300">
+                <span className="text-[10px] font-mono tracking-wider px-3 py-1 bg-[#121214] border border-border/80 text-white rounded-md group-hover:border-blitz-red/20 group-hover:text-white transition-all duration-300">
                   React
                 </span>
-                <span className="text-[10px] font-mono tracking-wider px-3 py-1 bg-[#121214] border border-border/80 text-ash rounded-md group-hover:border-blitz-red/20 group-hover:text-white transition-all duration-300">
+                <span className="text-[10px] font-mono tracking-wider px-3 py-1 bg-[#121214] border border-border/80 text-white rounded-md group-hover:border-blitz-red/20 group-hover:text-white transition-all duration-300">
                   TypeScript
                 </span>
               </div>
@@ -252,24 +303,24 @@ export const BlitzedoLanding: React.FC<BlitzedoLandingProps> = ({
                       App Design & Dev
                     </h3>
                   </div>
-                  <span className="font-mono text-xs text-ash/30 group-hover:text-blitz-red transition-colors duration-300">
+                  <span className="font-mono text-xs text-red-500 font-bold group-hover:text-blitz-red transition-colors duration-300">
                     03
                   </span>
                 </div>
                 
-                <p className="text-ash text-sm leading-relaxed font-sans mb-8 group-hover:text-white/90 transition-colors duration-300">
+                <p className="text-gray-200 text-sm leading-relaxed font-sans mb-8 group-hover:text-white transition-colors duration-300">
                   Mobile products designed from interaction up. We handle UX research, interface design, and cross-platform engineering.
                 </p>
               </div>
 
               <div className="flex flex-wrap gap-2">
-                <span className="text-[10px] font-mono tracking-wider px-3 py-1 bg-[#121214] border border-border/80 text-ash rounded-md group-hover:border-blitz-red/20 group-hover:text-white transition-all duration-300">
+                <span className="text-[10px] font-mono tracking-wider px-3 py-1 bg-[#121214] border border-border/80 text-white rounded-md group-hover:border-blitz-red/20 group-hover:text-white transition-all duration-300">
                   React Native
                 </span>
-                <span className="text-[10px] font-mono tracking-wider px-3 py-1 bg-[#121214] border border-border/80 text-ash rounded-md group-hover:border-blitz-red/20 group-hover:text-white transition-all duration-300">
+                <span className="text-[10px] font-mono tracking-wider px-3 py-1 bg-[#121214] border border-border/80 text-white rounded-md group-hover:border-blitz-red/20 group-hover:text-white transition-all duration-300">
                   Flutter
                 </span>
-                <span className="text-[10px] font-mono tracking-wider px-3 py-1 bg-[#121214] border border-border/80 text-ash rounded-md group-hover:border-blitz-red/20 group-hover:text-white transition-all duration-300">
+                <span className="text-[10px] font-mono tracking-wider px-3 py-1 bg-[#121214] border border-border/80 text-white rounded-md group-hover:border-blitz-red/20 group-hover:text-white transition-all duration-300">
                   iOS/Android
                 </span>
               </div>
@@ -286,73 +337,6 @@ export const BlitzedoLanding: React.FC<BlitzedoLandingProps> = ({
       {/* DYNAMIC BLUEPRINT PLANNER */}
       <ProjectPlanner />
 
-      {/* LIVE INTERACTIVE VECTOR SANDBOX SECTION */}
-      <section id="sandbox-section" className="py-24 md:py-32 border-t border-border bg-void/90 text-white relative z-10">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            
-            {/* Telemetry info */}
-            <motion.div 
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
-              className="lg:col-span-5 space-y-6"
-            >
-              <span className="text-blitz-red font-mono text-xs tracking-widest uppercase">
-                NODE MANIPULATOR LAB
-              </span>
-              <h2 className="text-4xl md:text-5xl font-display font-extrabold tracking-tight uppercase">
-                COORDINATE TELEMETRY
-              </h2>
-              <p className="text-ash text-sm leading-relaxed">
-                Take control of the ambient canvas particles that cover our environment. Watch how changes to velocity and density values alter rendering calculations and physical coordinates live inside this browser instance.
-              </p>
-              
-              {/* Telemetry coordinate simulator readout */}
-              <div className="border border-border p-5 bg-ink/90 font-mono text-[10px] text-white/90 space-y-1">
-                <div className="text-blitz-red border-b border-border pb-1.5 mb-2 flex justify-between uppercase">
-                  <span>VECTOR_STATE_MONITOR</span>
-                  <span className="animate-pulse">● FEED ACTIVE</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>PARTICLE_COLOR:</span>
-                  <span>{sandboxConfig.particleColor}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>VELOCITY_STRETCH:</span>
-                  <span>{sandboxConfig.speedFactor}x</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>DENSITY_CAP:</span>
-                  <span>{sandboxConfig.densityFactor} (denominator)</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>DEFLECTION_ZONE:</span>
-                  <span>{sandboxConfig.mouseRadius}px</span>
-                </div>
-                <div className="flex justify-between pt-1.5 border-t border-white/5 mt-1.5 text-ash">
-                  <span>RENDER_CLOCK:</span>
-                  <span>{new Date().toISOString().substring(11, 19)}</span>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Sandbox panel */}
-            <motion.div 
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-              className="lg:col-span-7"
-            >
-              <ParticleSandbox config={sandboxConfig} onChange={setSandboxConfig} />
-            </motion.div>
-
-          </div>
-        </div>
-      </section>
-
       {/* CONTACT PORTAL SECTION */}
       <section id="contact" className="py-24 md:py-32 border-t border-border bg-ink/95 text-white relative z-10">
         <div className="max-w-4xl mx-auto px-6">
@@ -364,13 +348,13 @@ export const BlitzedoLanding: React.FC<BlitzedoLandingProps> = ({
             transition={{ duration: 0.8, ease: "easeOut" }}
             className="text-center mb-16 space-y-4"
           >
-            <span className="text-blitz-red font-mono text-xs tracking-widest uppercase block">
+            <span className="text-red-500 font-mono text-sm font-bold tracking-widest uppercase block">
               SECURE CONTACT PORTAL
             </span>
             <h2 className="text-4xl md:text-6xl font-display font-extrabold tracking-tight uppercase">
               FORGE YOUR SYSTEM
             </h2>
-            <p className="text-ash text-sm max-w-md mx-auto">
+            <p className="text-gray-200 text-sm md:text-base max-w-md mx-auto leading-relaxed">
               Initiate a dialogue. Submit your coordinate blueprints or project specs directly to our active development teams.
             </p>
           </motion.div>
@@ -380,14 +364,14 @@ export const BlitzedoLanding: React.FC<BlitzedoLandingProps> = ({
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-            className="bg-void/90 border border-border p-8 md:p-12"
+            className="bg-void/90 border border-border p-8 md:p-12 rounded-xl shadow-2xl"
           >
             <form onSubmit={handleSubmit} className="space-y-6">
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Name */}
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-mono text-white/50 uppercase tracking-widest">
+                  <label className="block text-xs font-mono text-white/90 uppercase tracking-widest font-bold">
                     IDENTIFICATION / NAME
                   </label>
                   <input
@@ -396,13 +380,13 @@ export const BlitzedoLanding: React.FC<BlitzedoLandingProps> = ({
                     value={formState.name}
                     onChange={(e) => setFormState(p => ({ ...p, name: e.target.value }))}
                     placeholder="e.g. Director Sterling"
-                    className="w-full bg-ink border border-border px-4 py-3.5 text-white placeholder-white/20 text-sm font-sans focus:outline-none focus:border-blitz-red"
+                    className="w-full bg-ink border border-border px-4 py-3.5 text-white placeholder-white/40 text-sm font-sans focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/30 transition-all rounded"
                   />
                 </div>
 
                 {/* Email */}
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-mono text-white/50 uppercase tracking-widest">
+                  <label className="block text-xs font-mono text-white/90 uppercase tracking-widest font-bold">
                     ROUTING / EMAIL ADDRESS
                   </label>
                   <input
@@ -411,14 +395,14 @@ export const BlitzedoLanding: React.FC<BlitzedoLandingProps> = ({
                     value={formState.email}
                     onChange={(e) => setFormState(p => ({ ...p, email: e.target.value }))}
                     placeholder="e.g. sterling@vanguard.io"
-                    className="w-full bg-ink border border-border px-4 py-3.5 text-white placeholder-white/20 text-sm font-sans focus:outline-none focus:border-blitz-red"
+                    className="w-full bg-ink border border-border px-4 py-3.5 text-white placeholder-white/40 text-sm font-sans focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/30 transition-all rounded"
                   />
                 </div>
               </div>
 
               {/* Project Category */}
               <div className="space-y-2">
-                <label className="block text-[10px] font-mono text-white/50 uppercase tracking-widest">
+                <label className="block text-xs font-mono text-white/90 uppercase tracking-widest font-bold">
                   PROJECT SPECIFICATION CATEGORY
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -431,10 +415,10 @@ export const BlitzedoLanding: React.FC<BlitzedoLandingProps> = ({
                       key={cat.id}
                       type="button"
                       onClick={() => setFormState(p => ({ ...p, projectType: cat.id }))}
-                      className={`py-2.5 text-[10px] font-mono border uppercase tracking-wider transition-all cursor-pointer ${
+                      className={`py-3 text-xs font-mono border uppercase tracking-wider transition-all cursor-pointer rounded ${
                         formState.projectType === cat.id
-                          ? 'border-blitz-red bg-blitz-red/5 text-white'
-                          : 'border-border text-ash hover:text-white hover:border-white/20'
+                          ? 'border-red-500 bg-red-500/10 text-white font-bold shadow-[0_0_15px_rgba(239,68,68,0.2)]'
+                          : 'border-border text-gray-200 hover:text-white hover:border-white/40 bg-ink/40'
                       }`}
                     >
                       {cat.label}
@@ -445,7 +429,7 @@ export const BlitzedoLanding: React.FC<BlitzedoLandingProps> = ({
 
               {/* Message */}
               <div className="space-y-2">
-                <label className="block text-[10px] font-mono text-white/50 uppercase tracking-widest">
+                <label className="block text-xs font-mono text-white/90 uppercase tracking-widest font-bold">
                   PROJECT SCOPE / MESSAGE DETAILS
                 </label>
                 <textarea
@@ -454,33 +438,52 @@ export const BlitzedoLanding: React.FC<BlitzedoLandingProps> = ({
                   value={formState.message}
                   onChange={(e) => setFormState(p => ({ ...p, message: e.target.value }))}
                   placeholder="Outline the parameters of your system ideation or insert a blueprint hash code..."
-                  className="w-full bg-ink border border-border px-4 py-3.5 text-white placeholder-white/20 text-sm font-sans focus:outline-none focus:border-blitz-red resize-none"
+                  className="w-full bg-ink border border-border px-4 py-3.5 text-white placeholder-white/40 text-sm font-sans focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/30 transition-all resize-none rounded"
                 />
               </div>
 
               {/* Submit / Status */}
-              <div className="pt-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-                <span className="text-[10px] font-mono text-ash flex items-center gap-1.5">
-                  <ShieldCheck className="h-4 w-4 text-green-400" /> SECURE SSL ENCRYPTED CONNECTION
+              <div className="pt-4 flex flex-col sm:flex-row justify-between items-center gap-4 border-t border-white/5">
+                <span className="text-xs font-mono text-gray-200 flex items-center gap-1.5 font-bold">
+                  <ShieldCheck className="h-4.5 w-4.5 text-green-400" /> SECURE SSL ENCRYPTED CONNECTION
                 </span>
 
-                <button
+                <motion.button
                   type="submit"
                   disabled={submitting || formSubmitted}
-                  className="px-8 py-4 bg-white text-black font-bold text-xs uppercase tracking-widest hover:bg-gray-200 transition-all flex items-center gap-2 w-full sm:w-auto justify-center cursor-pointer disabled:bg-white/50 disabled:cursor-not-allowed"
+                  whileHover={submitting || formSubmitted ? {} : { scale: 1.04, y: -1 }}
+                  whileTap={submitting || formSubmitted ? {} : { scale: 0.97 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                  className="px-8 py-4 bg-red-600 text-white font-bold text-xs uppercase tracking-widest hover:bg-red-500 transition-all flex items-center gap-2 w-full sm:w-auto justify-center cursor-pointer disabled:bg-white/20 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(220,38,38,0.25)] hover:shadow-[0_0_30px_rgba(220,38,38,0.5)] rounded-full group"
                 >
                   {submitting ? (
                     <>TRANSMITTING...</>
                   ) : formSubmitted ? (
                     <>
-                      <CheckCircle className="h-4 w-4 text-green-600" /> SYSTEM DEPLOYED
+                      <CheckCircle className="h-4 w-4 text-green-400" /> SYSTEM DEPLOYED
                     </>
                   ) : (
-                    <>
-                      TRANSMIT SPECIFICATIONS <Send className="h-3.5 w-3.5 text-black" />
-                    </>
+                    <span className="flex items-center gap-2">
+                      TRANSMIT SPECIFICATIONS
+                      <svg
+                        className="h-3.5 w-3.5 transition-none text-white animate-pulse"
+                        fill="none"
+                        viewBox="0 0 10 10"
+                        xmlns="http://www.w3.org/2000/svg"
+                        aria-hidden="true"
+                      >
+                        <path
+                          d="M1.004 9.166 9.337.833m0 0v8.333m0-8.333H1.004"
+                          stroke="currentColor"
+                          strokeWidth="1.25"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="[stroke-dasharray:32] [stroke-dashoffset:32] transition-[stroke-dashoffset] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] group-hover:[stroke-dashoffset:0]"
+                        />
+                      </svg>
+                    </span>
                   )}
-                </button>
+                </motion.button>
               </div>
 
             </form>
